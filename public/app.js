@@ -111,12 +111,46 @@ function renderTodos() {
                     onchange="toggleTodo(${todo.id})"
                 />
                 <span class="todo-text">${escapeHtml(todo.text)}</span>
+                <button class="edit-btn" onclick="editTodo(${todo.id})">Edit</button>
                 <button class="delete-btn" onclick="deleteTodo(${todo.id})">Delete</button>
             </div>
         `).join('');
     }
     
     updateStats();
+}
+
+// Edit a todo's text
+async function editTodo(id) {
+    try {
+        const todo = todos.find(t => t.id === id);
+        if (!todo) return alert('Todo not found locally');
+
+        const newText = prompt('Edit todo', todo.text);
+        if (newText === null) return; // cancelled
+        const trimmed = newText.trim();
+        if (!trimmed) return alert('Todo text cannot be empty');
+
+        const response = await fetch(`${API_BASE}/${id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text: trimmed }),
+        });
+
+        if (response.ok) {
+            const updated = await response.json();
+            const index = todos.findIndex(t => t.id === id);
+            if (index !== -1) {
+                todos[index] = updated;
+                renderTodos();
+            }
+        } else {
+            alert('Failed to update todo');
+        }
+    } catch (error) {
+        console.error('Error editing todo:', error);
+        alert('Failed to update todo');
+    }
 }
 
 // Update statistics
